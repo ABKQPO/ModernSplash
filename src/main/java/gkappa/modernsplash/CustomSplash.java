@@ -52,6 +52,8 @@ import cpw.mods.fml.common.EnhancedRuntimeException;
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.FMLLog;
 import cpw.mods.fml.common.ICrashCallable;
+import cpw.mods.fml.common.Loader;
+import cpw.mods.fml.common.ModContainer;
 import cpw.mods.fml.common.ProgressManager;
 import cpw.mods.fml.common.ProgressManager.ProgressBar;
 import cpw.mods.fml.common.asm.FMLSanityChecker;
@@ -195,7 +197,8 @@ public class CustomSplash {
             memoryLowColor = memoryLowColorNight;
         }
         final ResourceLocation fontLoc = new ResourceLocation(getString("fontTexture", "textures/font/ascii.png"));
-        final ResourceLocation logoLoc = new ResourceLocation("modernsplash:textures/gui/title/mojang.png");
+        final ResourceLocation logoLoc = new ResourceLocation(
+            getString("logoTexture", "modernsplash:textures/gui/title/mojang.png"));
         final ResourceLocation forgeLoc = new ResourceLocation(getString("forgeTexture", "fml:textures/gui/forge.gif"));
 
         File miscPackFile = new File(Minecraft.getMinecraft().mcDataDir, getString("resourcePackPath", "resources"));
@@ -352,15 +355,18 @@ public class CustomSplash {
                     }
 
                     if (forgeLogo) {
-                        float fw = (float) forgeTexture.getWidth() / 2f / 2f * scale;
-                        float fh = (float) forgeTexture.getHeight() / 2f / 2f * scale;
+                        float fw = (float) forgeTexture.getWidth() / 2f * scale;
+                        float fh = (float) forgeTexture.getHeight() / 2f * scale;
+
+                        float yOffset = 20 * scale;
+
                         glPushMatrix();
                         if (rotate) {
                             float sh = Math.max(fw, fh);
-                            glTranslatef(w - sh - logoOffset * scale, h - sh - logoOffset * scale, 0);
+                            glTranslatef(w - sh - logoOffset * scale, h - sh - logoOffset * scale - yOffset, 0);
                             glRotatef(angle, 0, 0, 1);
                         } else {
-                            glTranslatef(w - fw - logoOffset * scale, h - fh - logoOffset * scale, 0);
+                            glTranslatef(w - fw - logoOffset * scale, h - fh - logoOffset * scale - yOffset, 0);
                         }
                         int f = (angle / 10) % forgeTexture.getFrames();
                         glEnable(GL_TEXTURE_2D);
@@ -375,6 +381,17 @@ public class CustomSplash {
                         forgeTexture.texCoord(f, 1, 0);
                         glVertex2f(fw, -fh);
                         glEnd();
+                        glDisable(GL_TEXTURE_2D);
+                        glPopMatrix();
+
+                        glPushMatrix();
+                        setColor(fontColor);
+                        float textPadding = fontRenderer.getStringWidth(getForgeVersionString()) * 2 * scale
+                            + 4 * scale;
+                        glTranslatef(w - textPadding, h - yOffset, 0);
+                        glScalef(2 * scale, 2 * scale, 1);
+                        glEnable(GL_TEXTURE_2D);
+                        fontRenderer.drawString(getForgeVersionString(), 0, 0, fontColor);
                         glDisable(GL_TEXTURE_2D);
                         glPopMatrix();
                     }
@@ -392,6 +409,24 @@ public class CustomSplash {
                     Display.sync(100);
                 }
                 clearGL();
+            }
+
+            private String getForgeVersionString() {
+                String mcVersion = Loader.instance()
+                    .getMinecraftModContainer()
+                    .getVersion();
+
+                String forgeVersion = Loader.instance()
+                    .getModList()
+                    .stream()
+                    .filter(
+                        mod -> mod.getModId()
+                            .equals("Forge"))
+                    .map(ModContainer::getVersion)
+                    .findFirst()
+                    .orElse("Unknown");
+
+                return mcVersion + "-" + forgeVersion;
             }
 
             private String getString() {
