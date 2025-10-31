@@ -287,81 +287,80 @@ public class CustomSplash {
 
                     glClear(GL_COLOR_BUFFER_BIT);
 
-                    // matrix setup
                     int w = Display.getWidth();
                     int h = Display.getHeight();
+                    float scale = Math.min(w / 640f, h / 480f);
+                    float centerX = w / 2f;
+                    float centerY = h / 2f;
+
                     glViewport(0, 0, w, h);
                     glMatrixMode(GL_PROJECTION);
                     glLoadIdentity();
-                    glOrtho(320 - w / 2, 320 + w / 2, 240 + h / 2, 240 - h / 2, -1, 1);
+                    glOrtho(0, w, h, 0, -1, 1);
                     glMatrixMode(GL_MODELVIEW);
                     glLoadIdentity();
 
-                    // mojang logo
+                    float logoSize = 256 * scale;
                     setColor(logoColor);
                     glEnable(GL_TEXTURE_2D);
                     logoTexture.bind();
                     glBegin(GL_QUADS);
                     logoTexture.texCoord(0, 0, 0);
-                    glVertex2f(320 - 256, 240 - 256);
+                    glVertex2f(centerX - logoSize, centerY - logoSize);
                     logoTexture.texCoord(0, 0, 1);
-                    glVertex2f(320 - 256, 240 + 256);
+                    glVertex2f(centerX - logoSize, centerY + logoSize);
                     logoTexture.texCoord(0, 1, 1);
-                    glVertex2f(320 + 256, 240 + 256);
+                    glVertex2f(centerX + logoSize, centerY + logoSize);
                     logoTexture.texCoord(0, 1, 0);
-                    glVertex2f(320 + 256, 240 - 256);
+                    glVertex2f(centerX + logoSize, centerY - logoSize);
                     glEnd();
                     glDisable(GL_TEXTURE_2D);
 
                     if (showMemory) {
                         glPushMatrix();
-                        glTranslatef(320 - (float) barWidth / 2, 20, 0);
+                        glTranslatef(centerX - (400 * scale) / 2, 20 * scale, 0);
+                        glScalef(scale, scale, 1);
                         drawMemoryBar();
                         glPopMatrix();
                     }
 
-                    // timer
                     if (enableTimer) {
                         glPushMatrix();
                         setColor(fontColor);
-                        glTranslatef(320 - Display.getWidth() / 2 + 4, 240 + Display.getHeight() / 2 - textHeight2, 0);
-                        glScalef(2, 2, 1);
+                        glTranslatef(4 * scale, h - 20 * scale, 0);
+                        glScalef(2 * scale, 2 * scale, 1);
                         glEnable(GL_TEXTURE_2D);
-                        String renderString = getString();
-                        fontRenderer.drawString(renderString, 0, 0, fontColor);
+                        fontRenderer.drawString(getString(), 0, 0, fontColor);
                         glDisable(GL_TEXTURE_2D);
                         glPopMatrix();
                     }
 
-                    // bars
                     if (first != null) {
                         glPushMatrix();
-                        glTranslatef(320 - (float) barWidth / 2, 310, 0);
+                        glTranslatef(centerX - (400 * scale) / 2, h - 180 * scale, 0);
+                        glScalef(scale, scale, 1);
                         drawBar(first);
                         if (penult != null) {
-                            glTranslatef(0, barOffset, 0);
+                            glTranslatef(0, 45, 0);
                             drawBar(penult);
                         }
                         if (last != null) {
-                            glTranslatef(0, barOffset, 0);
+                            glTranslatef(0, 45, 0);
                             drawBar(last);
                         }
                         glPopMatrix();
                     }
 
-                    angle += 1;
-
-                    // forge logo
                     if (forgeLogo) {
-                        setColor(backgroundColor);
-                        float fw = (float) forgeTexture.getWidth() / 2 / 2;
-                        float fh = (float) forgeTexture.getHeight() / 2 / 2;
+                        float fw = (float) forgeTexture.getWidth() / 2f / 2f * scale;
+                        float fh = (float) forgeTexture.getHeight() / 2f / 2f * scale;
+                        glPushMatrix();
                         if (rotate) {
                             float sh = Math.max(fw, fh);
-                            glTranslatef(320 + w / 2 - sh - logoOffset, 240 + h / 2 - sh - logoOffset, 0);
+                            glTranslatef(w - sh - logoOffset * scale, h - sh - logoOffset * scale, 0);
                             glRotatef(angle, 0, 0, 1);
                         } else {
-                            glTranslatef(320 + w / 2 - fw - logoOffset, 240 + h / 2 - fh - logoOffset, 0);
+                            glTranslatef(w - fw - logoOffset * scale, h - fh - logoOffset * scale, 0);
                         }
                         int f = (angle / 10) % forgeTexture.getFrames();
                         glEnable(GL_TEXTURE_2D);
@@ -377,17 +376,15 @@ public class CustomSplash {
                         glVertex2f(fw, -fh);
                         glEnd();
                         glDisable(GL_TEXTURE_2D);
+                        glPopMatrix();
                     }
-                    // We use mutex to indicate safely to the main thread that we're taking the display global lock
-                    // So the main thread can skip processing messages while we're updating.
-                    // There are system setups where this call can pause for a while, because the GL implementation
-                    // is trying to impose a framerate or other thing is occurring. Without the mutex, the main
-                    // thread would delay waiting for the same global display lock
+
+                    angle += 1;
+
                     mutex.acquireUninterruptibly();
                     Display.update();
-                    // As soon as we're done, we release the mutex. The other thread can now ping the processmessages
-                    // call as often as it wants until we get get back here again
                     mutex.release();
+
                     if (pause) {
                         clearGL();
                         setGL();
@@ -601,7 +598,7 @@ public class CustomSplash {
      * Call before you need to explicitly modify GL context state during loading.
      * Resource loading doesn't usually require this call.
      * Call {@link #resume()} when you're done.
-     * 
+     *
      * @deprecated not a stable API, will break, don't use this yet
      */
     @Deprecated
