@@ -1,5 +1,14 @@
 // Add any additional repositories for your dependencies here.
-
 repositories {
-
+    maven {
+        url = uri("https://jitpack.io")
+        mavenContent {
+            includeGroup("com.github")
+            includeGroupByRegex("com\\.github\\..+")
+        }
+        metadataSources {
+            mavenPom()
+            ignoreGradleMetadataRedirection()
+        }
+    }
 }
