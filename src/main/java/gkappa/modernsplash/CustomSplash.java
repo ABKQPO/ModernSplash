@@ -94,6 +94,7 @@ public class CustomSplash {
     public static int barColor;
     public static int barBackgroundColor;
     public static boolean showMemory;
+    public static boolean showArchFixMemory;
     public static boolean showTotalMemoryLine;
 
     public static boolean displayStartupTimeOnMainMenu = true;
@@ -152,6 +153,7 @@ public class CustomSplash {
         rotate = getBool("rotate", false);
         forgeLogo = getBool("forgeLogo", false);
         showMemory = getBool("showMemory", true);
+        showArchFixMemory = getBool("showArchFixMemory", true);
         showTotalMemoryLine = getBool("showTotalMemoryLine", false);
         enableTimer = getBool("enableTimer", true);
 
@@ -163,9 +165,9 @@ public class CustomSplash {
         barBorderColor = getHex("barBorder", 0xFFFFFF);
         barColor = getHex("bar", 0xFFFFFF);
         barBackgroundColor = getHex("barBackground", 0xEF323D);
-        memoryGoodColor = getHex("memoryGood", 0xFFFFFF);
-        memoryWarnColor = getHex("memoryWarn", 0xFFFFFF);
-        memoryLowColor = getHex("memoryLow", 0xFFFFFF);
+        memoryGoodColor = getHex("memoryGood", 0x337D23);
+        memoryWarnColor = getHex("memoryWarn", 0x337D23);
+        memoryLowColor = getHex("memoryLow", 0x337D23);
 
         displayStartupTimeOnMainMenu = getBool("timeOnMainMenu", true);
 
@@ -498,6 +500,9 @@ public class CustomSplash {
             }
 
             private void drawMemoryBar() {
+                int cpuUsage = getSystemCpuUsage();
+                String cpuText = cpuUsage >= 0 ? ("CPU: " + getCpuString(cpuUsage)) : "CPU: N/A";
+
                 int maxMemory = bytesToMb(
                     Runtime.getRuntime()
                         .maxMemory());
@@ -511,7 +516,8 @@ public class CustomSplash {
                 float usedMemoryPercent = usedMemory / (float) maxMemory;
                 String progress = getMemoryString(usedMemory) + " / " + getMemoryString(maxMemory);
 
-                boolean useArchaic = Loader.isModLoaded("archaicfix") && ArchaicConfig.showSplashMemoryBar;
+                boolean useArchaic = showArchFixMemory && Loader.isModLoaded("archaicfix")
+                    && ArchaicConfig.showSplashMemoryBar;
 
                 glPushMatrix();
                 setColor(fontColor);
@@ -519,7 +525,7 @@ public class CustomSplash {
                 glEnable(GL_TEXTURE_2D);
                 if (useArchaic) {
                     // title - separate line
-                    fontRenderer.drawString("Memory Used / Total", 0, 0, fontColor);
+                    fontRenderer.drawString("Memory Used / Total" + "  " + cpuText, 0, 0, fontColor);
                     glDisable(GL_TEXTURE_2D);
                     glPopMatrix();
 
@@ -550,7 +556,7 @@ public class CustomSplash {
                     setColor(memoryLowColor);
                     glPushMatrix();
                     glTranslatef((float) ((barWidth - 2) * (totalMemory)) / (maxMemory) - 2, 0, 0);
-                    drawBox(2, barHeight - 2);
+                    drawBox(2, barHeight - 4);
                     glPopMatrix();
 
                     // used memory bar
@@ -567,7 +573,11 @@ public class CustomSplash {
 
                 } else {
                     // title and progress in one line
-                    fontRenderer.drawString("Memory Usage : " + progress, 0, 0, fontColor);
+                    String text = "Memory Usage : " + progress + "  " + cpuText;
+                    int textWidth = fontRenderer.getStringWidth(text);
+                    int textX = (barWidth - textWidth * 2) / 4;
+
+                    fontRenderer.drawString(text, textX, 0, fontColor);
                     glDisable(GL_TEXTURE_2D);
                     glPopMatrix();
 
@@ -613,6 +623,20 @@ public class CustomSplash {
 
             public String getMemoryString(int memory) {
                 return StringUtils.leftPad(Integer.toString(memory), 4, ' ') + " MB";
+            }
+
+            public String getCpuString(int cpu) {
+                return StringUtils.leftPad(Integer.toString(cpu), 3, ' ') + " %";
+            }
+
+            public int getSystemCpuUsage() {
+                com.sun.management.OperatingSystemMXBean os = (com.sun.management.OperatingSystemMXBean) java.lang.management.ManagementFactory
+                    .getOperatingSystemMXBean();
+
+                double load = os.getSystemCpuLoad();
+                if (load < 0) return -1;
+
+                return (int) (load * 100);
             }
 
             public void setGL() {
