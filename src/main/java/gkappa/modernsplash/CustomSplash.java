@@ -70,6 +70,7 @@ public class CustomSplash {
     public static Thread thread;
     public static volatile Throwable threadError;
     public static int angle = 0;
+    public static int Frame = 120;
     public static final Lock lock = new ReentrantLock(true);
     public static SplashFontRenderer fontRenderer;
 
@@ -370,7 +371,7 @@ public class CustomSplash {
                         } else {
                             glTranslatef(w - fw - logoOffset * scale, h - fh - logoOffset * scale - yOffset, 0);
                         }
-                        int f = (angle / 10) % forgeTexture.getFrames();
+                        int f = (int) (angle * ((float)forgeTexture.getFrames() / Frame) % forgeTexture.getFrames());
                         glEnable(GL_TEXTURE_2D);
                         forgeTexture.bind();
                         glBegin(GL_QUADS);
@@ -407,7 +408,7 @@ public class CustomSplash {
                         clearGL();
                         setGL();
                     }
-                    Display.sync(100);
+                    Display.sync(Frame);
                 }
                 clearGL();
             }
@@ -907,7 +908,7 @@ public class CustomSplash {
         }
 
         public int getFrames() {
-            return frames;
+            return frames + 1;
         }
 
         public int getSize() {
@@ -924,10 +925,13 @@ public class CustomSplash {
 
         public float getU(int frame, float u) {
             return width * (frame % ((float) size / width) + u) / size;
+            //return u;
         }
 
         public float getV(int frame, float v) {
-            return height * (frame / ((float) size / width) + v) / size;
+            int currentFrame = frame % frames * width / size;
+            return height * ( (int) (currentFrame % ((float) size / width)) + v) / size;
+            //return v;
         }
 
         public void texCoord(int frame, float u, float v) {
