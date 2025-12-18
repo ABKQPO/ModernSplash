@@ -398,6 +398,7 @@ public class CustomSplash {
                     glDisable(GL_TEXTURE_2D);
                     glPopMatrix();
 
+                    if (angle == Frame) angle = 0;
                     angle += 1;
 
                     mutex.acquireUninterruptibly();
