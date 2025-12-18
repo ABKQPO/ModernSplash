@@ -501,7 +501,7 @@ public class CustomSplash {
 
             private void drawMemoryBar() {
                 int cpuUsage = getSystemCpuUsage();
-                String cpuText = cpuUsage >= 0 ? ("CPU : " + getCpuString(cpuUsage)) : "CPU : N/A";
+                String cpuText = cpuUsage >= 0 ? ("CPU: " + getCpuString(cpuUsage)) : "CPU: N/A";
 
                 int maxMemory = bytesToMb(
                     Runtime.getRuntime()
