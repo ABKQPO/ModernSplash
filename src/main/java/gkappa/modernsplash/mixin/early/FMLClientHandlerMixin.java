@@ -17,6 +17,9 @@ public class FMLClientHandlerMixin {
         at = @At(value = "INVOKE", target = "Lcpw/mods/fml/client/SplashProgress;start()V"))
     private void rdStart() {
         CustomSplash.start();
+        // Disabled on purpose: re-enabling this debug hook keeps CustomSplash visible longer
+        // and can make the game appear stalled during startup.
+        // StartupDebugDelay.onSplashStarted();
     }
 
     @Redirect(method = "haltGame", at = @At(value = "INVOKE", target = "Lcpw/mods/fml/client/SplashProgress;finish()V"))

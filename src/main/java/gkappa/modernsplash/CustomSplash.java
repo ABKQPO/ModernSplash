@@ -67,6 +67,8 @@ public class CustomSplash {
     public static Drawable d;
     public static volatile boolean pause = false;
     public static volatile boolean done = false;
+    // Disabled debug state: keeping this commented avoids altering the normal splash shutdown path.
+    // public static volatile boolean finishRequested = false;
     public static Thread thread;
     public static volatile Throwable threadError;
     public static int angle = 0;
@@ -130,6 +132,9 @@ public class CustomSplash {
     }
 
     public static void start() {
+        done = false;
+        // Disabled debug reset: the delayed splash experiment is currently turned off.
+        // finishRequested = false;
         File configFile = new File(Minecraft.getMinecraft().mcDataDir, "config/splash.properties");
         FileReader r = null;
         config = new Properties();
@@ -408,6 +413,11 @@ public class CustomSplash {
                         clearGL();
                         setGL();
                     }
+                    // Disabled debug exit gate: leave the original finish timing untouched.
+                    // if (finishRequested && StartupDebugDelay.canFinishSplash()) {
+                    // done = true;
+                    // continue;
+                    // }
                     Display.sync(Frame);
                 }
                 clearGL();
@@ -502,7 +512,7 @@ public class CustomSplash {
 
             private void drawMemoryBar() {
                 int cpuUsage = getSystemCpuUsage();
-                String cpuText = cpuUsage >= 0 ? ("CPU: " + getCpuString(cpuUsage)) : "CPU: N/A";
+                String cpuText = cpuUsage >= 0 ? ("CPU : " + getCpuString(cpuUsage)) : "CPU: N/A";
 
                 int maxMemory = bytesToMb(
                     Runtime.getRuntime()
@@ -554,7 +564,7 @@ public class CustomSplash {
                     else memoryBarColor = memoryLowColor;
 
                     // total memory line
-                    setColor(memoryLowColor);
+                    setColor(barColor);
                     glPushMatrix();
                     glTranslatef((float) ((barWidth - 2) * (totalMemory)) / (maxMemory) - 2, 0, 0);
                     drawBox(2, barHeight - 4);
@@ -607,7 +617,7 @@ public class CustomSplash {
 
                     // optional total memory line
                     if (showTotalMemoryLine) {
-                        setColor(memoryLowColor);
+                        setColor(barColor);
                         glPushMatrix();
                         glTranslatef((float) ((barWidth - 8) * (totalMemory)) / (maxMemory) - 2, 2, 0);
                         drawBox(2, barHeight - 8);
@@ -741,7 +751,11 @@ public class CustomSplash {
         if (!enabled) return;
         try {
             checkThreadState();
+            // Disabled debug finish hook: do not intercept the regular splash shutdown flow.
+            // finishRequested = true;
+            // if (StartupDebugDelay.canFinishSplash()) {
             done = true;
+            // }
             thread.join();
             d.releaseContext();
             Display.getDrawable()
@@ -908,7 +922,7 @@ public class CustomSplash {
         }
 
         public int getFrames() {
-            return frames + 1;
+            return frames;
         }
 
         public int getSize() {
@@ -924,13 +938,17 @@ public class CustomSplash {
         }
 
         public float getU(int frame, float u) {
-            return width * (frame % ((float) size / width) + u) / size;
+            int currentFrame = frame % frames;
+            int columns = size / width;
+            return width * (currentFrame % columns + u) / size;
             // return u;
         }
 
         public float getV(int frame, float v) {
-            int currentFrame = frame % frames * width / size;
-            return height * ((int) (currentFrame % ((float) size / width)) + v) / size;
+            int currentFrame = frame % frames;
+            int columns = size / width;
+            int row = currentFrame / columns;
+            return height * (row + v) / size;
             // return v;
         }
 
